@@ -1,0 +1,17 @@
+{
+  "name": "webgllogo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "parcel-plugin-asset-copier": "^1.0.0",
+    "three": "^0.106.2",
+    "three-gltf-loader": "^1.106.0"
+  },
+  "assetsPath": "src/assets"
+}
