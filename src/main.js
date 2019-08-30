@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import GLTFLoader from 'three-gltf-loader';
 
 function init() {
-    let pos = {x:0,y:0};
+    let pos = {x:0,y:0,xf:0,yf:0,deltaX:0,deltaY:0};
+    const logoScale = 13;
     let speed = 0;
     let accel = .008;
     let decel = .0005;
@@ -11,7 +12,7 @@ function init() {
     let isDown = false;
 
     let scene = new THREE.Scene();
-    let camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    let camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.1, 1000 );
     let renderer = new THREE.WebGLRenderer({antialias:true});
     let camMatrix = new THREE.Matrix4();
     let camEuler = new THREE.Euler();
@@ -34,7 +35,6 @@ function init() {
 
         logo = gltf.scene;
 
-        logo.scale.set(15, 15, 15);
         scene.add( logo );
         
         logo.children[0].material = new THREE.MeshStandardMaterial( { color:0xA9273D });
@@ -49,11 +49,12 @@ function init() {
 
         console.log(scene);
 
+        initSize();
         render();
     } );
 
     function render() {
-        let rotScale = .2;
+        let rotScale = .4;
         let rads = Math.PI * 2 * rotScale * -1;
         camera.position.set(0, 0, 1);
         camMatrix.identity();
@@ -83,6 +84,38 @@ function init() {
         window.requestAnimationFrame(render);
     }
 
+    function initSize(evt) {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+    
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        let visibleWidth = visibleWidthAtZDepth(0, camera);
+        let visibleHeight = visibleHeightAtZDepth(0, camera);
+        let min = Math.min(visibleHeight, visibleWidth);
+        let logoSize = logoScale * min;
+        console.log(min);
+        console.log(logoSize);
+
+        logo.scale.set(logoSize, logoSize, logoSize);
+    }
+
+    window.addEventListener("resize", initSize);
+
+    window.addEventListener("deviceorientation", function(evt) {
+        let x = evt.beta;
+        let y = evt.gamma;
+
+        if (x > 90) { x = 90 };
+        if (x < -90) { x = -90};
+
+        x += 90;
+        y += 90;
+
+        // Seems dimensions are somehow swapped
+        pos.xf = y / 180 - .5;
+        pos.yf = x / 180 - .5;
+    });
 
     window.addEventListener("mousemove", function(evt) {
         if (!initial) {
@@ -98,14 +131,57 @@ function init() {
         pos.yf = pos.y / window.innerHeight - .5;
     });
 
+    window.addEventListener("touchmove", function(evt) {
+        if (!initial) {
+            pos.deltaX = pos.x - evt.changedTouches[0].pageX;
+            pos.deltaY = pos.y - evt.changedTouches[0].pageY;
+        }
+        initial = false;
+
+        let lastTouch = evt.changedTouches[evt.changedTouches.length - 1];
+        pos.x = lastTouch.pageX;
+        pos.y = lastTouch.pageX;
+
+        pos.xf = pos.x / window.innerWidth - .5;
+        pos.yf = pos.y / window.innerHeight - .5;
+    });
+
+    window.addEventListener("touchstart", function(evt) {
+        evt.preventDefault();
+        isDown = true;
+    });
+
     window.addEventListener("mousedown", function(evt) {
         evt.preventDefault();
         isDown = true;
     });
 
+    window.addEventListener("touchend", function(evt) {
+        isDown = false;
+    });
+
     window.addEventListener("mouseup", function(evt) {
         isDown = false;
     });
+
+    const visibleHeightAtZDepth = ( depth, camera ) => {
+        // compensate for cameras not positioned at z=0
+        const cameraOffset = camera.position.z;
+        if ( depth < cameraOffset ) depth -= cameraOffset;
+        else depth += cameraOffset;
+      
+        // vertical fov in radians
+        const vFOV = camera.fov * Math.PI / 180; 
+      
+        // Math.abs to ensure the result is always positive
+        return 2 * Math.tan( vFOV / 2 ) * Math.abs( depth );
+      };
+      
+      const visibleWidthAtZDepth = ( depth, camera ) => {
+        const height = visibleHeightAtZDepth( depth, camera );
+        return height * camera.aspect;
+      };
+      
 }
 
 init();
