@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "three": "^0.106.2",
+    "three": "^0.125.0",
     "three-gltf-loader": "^1.106.0"
   },
   "assetsPath": "src/assets",
